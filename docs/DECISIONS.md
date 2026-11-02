@@ -148,3 +148,25 @@ The quirks log is `docs/QUIRKS.md` and this decisions log is
 `package.json` has no `files` field and there is no `.npmignore`, so the next
 publish would include `test/` and `docs/`. Harmless, but it's an observable
 packaging change, to be decided when preparing the next release.
+
+## D11. Continuous integration (2026-11-02, decided)
+
+GitHub Actions runs `npm ci` and `npm run test:coverage` on every pull request
+to `master`, every push to `master`, and on demand
+(`.github/workflows/test.yml`).
+
+- Node.js matrix: every release line still supported upstream, 22 or later
+  (the coverage flags need 22). As of 2026-11-02 that is 22, 24 and 26. The ES5
+  check (D7) derives its list of post-ES5 members from the running Node.js
+  version, so newer lines also tighten that check. Update the matrix when a
+  line reaches end of life or a new LTS line ships.
+- Required check: the single "All tests pass" job, which fails unless every
+  Node.js job passed. Requiring it, rather than each Node.js job, means the
+  ruleset doesn't need editing when the matrix changes.
+- Hardening: the workflow's token is read-only, checkout doesn't keep
+  credentials, third-party actions are pinned to full commit SHAs, and there
+  is no dependency cache (three dev dependencies install in seconds, and a
+  cache shared with pull request runs could be poisoned).
+- Dependabot (`.github/dependabot.yml`) proposes updates to those pinned SHAs
+  in one grouped pull request a month, waiting 7 days after a release. npm
+  dependencies are excluded, since they are pinned on purpose (D5).
