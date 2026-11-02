@@ -1,0 +1,16 @@
+# Keeps the commit SHAs pinned in .github/workflows up to date.
+# Opens at most one grouped PR a month; npm dependencies are excluded on
+# purpose (they're pinned for test stability; see docs/DECISIONS.md, D5).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    # Wait a week after a release before proposing it, so a compromised
+    # release is more likely to be caught and pulled first.
+    cooldown:
+      default-days: 7
+    groups:
+      github-actions:
+        patterns: ['*']

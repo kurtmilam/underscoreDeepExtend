@@ -1,0 +1,66 @@
+# Runs the full test suite, with the 100% coverage gate, on every pull request
+# to master and every push to master. See docs/DECISIONS.md, D11.
+
+name: Tests
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+# Read-only token: this workflow only checks out code and runs tests.
+permissions:
+  contents: read
+
+# A new push to the same PR or branch cancels the run it supersedes.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Node.js ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        # Supported Node.js release lines (22 or later; the coverage flags
+        # need 22). Update when a line reaches end of life or a new LTS ships.
+        node: ['22', '24', '26']
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js ${{ matrix.node }}
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ matrix.node }}
+          package-manager-cache: false
+
+      - name: Install dev dependencies (exact versions from package-lock.json)
+        run: npm ci --no-audit --no-fund
+
+      - name: Run tests with the 100% coverage gate
+        run: npm run test:coverage
+
+  # One stable check to mark as required in the protect-default ruleset, so the
+  # ruleset doesn't need editing whenever the Node.js versions above change.
+  # It runs even when a test job fails, and fails unless every test job passed.
+  all-tests-pass:
+    name: All tests pass
+    if: ${{ always() }}
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Check the result of every test job
+        env:
+          RESULT: ${{ needs.test.result }}
+        run: |
+          echo "Test jobs result: $RESULT"
+          test "$RESULT" = "success"
