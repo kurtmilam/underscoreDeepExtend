@@ -59,9 +59,18 @@ Decision: open
 ### Q5. A function in a source becomes an empty object
 
 A function assigned to a key the target lacks goes through `_.clone`, which
-turns it into `{}` in both underscore and lodash.
+turns it into `{}` in both underscore and lodash. A function replacing a
+function becomes `{}` too, or a plain object holding the source function's own
+properties.
+
+Gist comments asked for functions to be copied (wulftone, 2013), and the gist
+was updated in response, but functions still aren't copied; a 2024 comment
+(nntoan) reports the same thing.
 
 - `test/characterization/dispatch.test.js`: "a function source value for a new key becomes a plain empty object"
+- `test/characterization/gist-reports.test.js`: "a function assigned to a new key is not copied: it becomes an empty object"
+- `test/characterization/gist-reports.test.js`: "a function replacing another function becomes an empty object"
+- `test/characterization/gist-reports.test.js`: "a function replacing a function with properties keeps only the source function's own properties, as a plain object"
 
 Decision: open
 
@@ -71,7 +80,12 @@ Assigned values go through the injected `_.clone`. underscore's `_.clone`
 turns a Date or RegExp into `{}`; lodash's clones them properly. Pinned per
 library.
 
+The gist's Date handling was added in response to a 2014 comment (tkalfigo).
+It works with lodash, but with underscore, the dependency the gist itself
+names, the reported scenario still doesn't produce a Date.
+
 - `test/characterization/dispatch.test.js`: "a Date source value is cloned onto a new key"
+- `test/characterization/gist-reports.test.js`: "a later Date replaces an earlier Date (underscore: as an empty object)"
 - `test/characterization/dispatch.test.js`: "a Date source value replaces an existing Date"
 - `test/characterization/dispatch.test.js`: "a Date source value replaces an existing primitive or object without throwing"
 - `test/characterization/dispatch.test.js`: "a RegExp source value for a new key is cloned"
@@ -84,7 +98,13 @@ When the target lacks a key, the source value is shallow-cloned. Nested objects
 and arrays inside it are shared with the source, so a later merge into the
 result can mutate an earlier source.
 
+A 2015 gist comment (pavelthq) reported that changing the result changed the
+source. The fix reaches one level: changing a first-level value is now safe,
+but a second-level value is still shared.
+
 - `test/characterization/dispatch.test.js`: "a new object is copied, but its nested values are shared with the source"
+- `test/characterization/gist-reports.test.js`: "changing a first-level value of the result does not change the source"
+- `test/characterization/gist-reports.test.js`: "changing a second-level value of the result DOES change the source"
 - `test/characterization/dispatch.test.js`: "a new array is copied, but its elements are shared with the source"
 - `test/characterization/dispatch.test.js`: "shared nested values let a LATER merge mutate an earlier source"
 

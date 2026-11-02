@@ -31,12 +31,28 @@ canonical repo (https://github.com/kurtmilam/underscoreDeepExtend) at
 canonical `master`), with an identical tree. The canonical repo is the source
 of truth; the xioup repo holds no other code.
 
-## D3. Original gist not yet compared (2026-11-02, open)
+## D3. The original gist has the same merge function (2026-11-02, decided)
 
-The original gist (https://gist.github.com/1868955) still needs to be compared
-with the published code, and its comments reviewed for reported bugs and
-real-world usage to add as characterization tests. Neither could be reached
-from the tooling used so far.
+The original gist (https://gist.github.com/1868955) was compared at revision
+`b547cbe0823f9963225f21aa891a4d744cd1ab7f` (2016-05-13), its latest.
+
+- Its merge function is the same as the one in `index.js` on the default
+  branch, so it matches published 1.1.5 apart from the cosmetic differences
+  in D1.
+- It is packaged differently: a global function declaration named
+  `deepExtend` with no module wrapper, which uses the global `_` and calls
+  `_.mixin` on it when loaded. So it needs `_.mixin`, and mixes itself in
+  without being asked.
+- Checked by running the characterization tests against the gist's code with
+  the injected library as its `_`: 198 of 204 pass. The 6 that fail all follow
+  from the self-mixin above (the mixin requirement, the set of methods used,
+  and tests that inject a library without `mixin`). Every merge behavior is
+  the same.
+- The gist's usage notes repeat the README examples, including the outputs
+  the code doesn't produce (quirk Q19).
+- Its 27 comments (2012–2024) were reviewed. The scenarios they report are
+  pinned in `test/characterization/gist-reports.test.js`, and noted in quirks
+  Q5, Q6 and Q7 where the fixes made at the time don't fully hold.
 
 ## D4. Published versions and their commits (2026-11-02, decided; tagging open)
 
