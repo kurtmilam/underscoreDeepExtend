@@ -59,17 +59,17 @@ The original gist (https://gist.github.com/1868955) was compared at revision
 Each published version's npm package was compared, file by file, with every
 commit in the repo (line endings normalized):
 
-| Version | Published (UTC)  | Matching commit | Existing tag |
-| ------- | ---------------- | --------------- | ------------ |
-| 0.0.1   | 2014-03-28 15:24 | `54ce7fa`       | none         |
-| 0.0.2   | 2014-03-28 15:53 | `079519a`       | none         |
-| 0.0.3   | 2014-03-28 22:17 | `709a56e`       | `v0.0.3` → `9907a84` (see below) |
-| 0.0.4   | 2014-07-17 21:11 | can't be matched: removed from npm | `v0.0.4` → `18906fe` |
-| 0.0.5   | 2014-07-17 21:22 | `62f9cf7`       | `v0.0.5` → `62f9cf7` (correct) |
-| 1.0.1   | 2016-04-12 20:07 | `be98a23`       | none         |
-| 1.0.4   | 2016-04-12 21:31 | `de36d43`       | none         |
-| 1.1.4   | 2016-05-11 14:53 | `4063d93`       | none         |
-| 1.1.5   | 2016-05-13 09:11 | `eb09674`       | none         |
+| Version | Published (UTC)  | Matching commit                    | Existing tag                     |
+| ------- | ---------------- | ---------------------------------- | -------------------------------- |
+| 0.0.1   | 2014-03-28 15:24 | `54ce7fa`                          | none                             |
+| 0.0.2   | 2014-03-28 15:53 | `079519a`                          | none                             |
+| 0.0.3   | 2014-03-28 22:17 | `709a56e`                          | `v0.0.3` → `9907a84` (see below) |
+| 0.0.4   | 2014-07-17 21:11 | can't be matched: removed from npm | `v0.0.4` → `18906fe`             |
+| 0.0.5   | 2014-07-17 21:22 | `62f9cf7`                          | `v0.0.5` → `62f9cf7` (correct)   |
+| 1.0.1   | 2016-04-12 20:07 | `be98a23`                          | none                             |
+| 1.0.4   | 2016-04-12 21:31 | `de36d43`                          | none                             |
+| 1.1.4   | 2016-05-11 14:53 | `4063d93`                          | none                             |
+| 1.1.5   | 2016-05-13 09:11 | `eb09674`                          | none                             |
 
 - 0.0.3: three commits have identical contents for the published files.
   `709a56e` ("Version bump for NPM") was committed nine seconds before the
