@@ -143,11 +143,26 @@ are listed here with the tests that cover them:
 The quirks log is `docs/QUIRKS.md` and this decisions log is
 `docs/DECISIONS.md`.
 
-## D10. Test files in the npm package (2026-11-02, open)
+## D10. Package contents (2026-11-02, decided)
 
-`package.json` has no `files` field and there is no `.npmignore`, so the next
-publish would include `test/` and `docs/`. Harmless, but it's an observable
-packaging change, to be decided when preparing the next release.
+The npm package keeps the file set it has always had. `package.json` lists
+`"files": ["index.js", "bower.json", "component.json"]`; npm always adds
+`package.json`, `README.md` and `LICENSE.md`. That is exactly what 1.1.5
+published, minus its `.npmignore` (a leftover list of ignore patterns that no
+consumer reads).
+
+- Why: without a `files` field, the next publish would also ship `test/`,
+  `docs/`, `.github/` and `SECURITY.md`. None of them is useful to consumers,
+  and an unchanged file set keeps the package's shape the same for anyone who
+  inspects or vendors it.
+- Enforced by `test/package-contents.test.js`, which asks npm for the file
+  list with `npm pack --dry-run` and compares it to the list above. A new
+  file in the repo can't reach the package without changing that test.
+- Checked with npm 10 (bundled with Node.js 22) and npm 11; both produce the
+  same list.
+- The only difference from 1.1.5 is the missing `.npmignore`. Nothing loads
+  or reads that file from an installed package, so its absence isn't treated
+  as a breaking packaging change and doesn't require a major version.
 
 ## D11. Continuous integration (2026-11-02, decided)
 
