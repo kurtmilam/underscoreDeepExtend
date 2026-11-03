@@ -54,32 +54,57 @@ The original gist (https://gist.github.com/1868955) was compared at revision
   pinned in `test/characterization/gist-reports.test.js`, and noted in quirks
   Q5, Q6 and Q7 where the fixes made at the time don't fully hold.
 
-## D4. Published versions and their commits (2026-11-02, decided; tagging open)
+## D4. Published versions and their commits (2026-11-02, decided; tags decided 2026-11-03)
 
 Each published version's npm package was compared, file by file, with every
-commit in the repo (line endings normalized):
+commit in the repo (line endings normalized; npm's own `package.json` fields
+such as `_id` ignored). Re-checked independently on 2026-11-03 with the same
+result. For 1.0.1 through 1.1.5 the `gitHead` npm recorded at publish time
+names the same commit.
 
-| Version | Published (UTC)  | Matching commit                    | Existing tag                     |
-| ------- | ---------------- | ---------------------------------- | -------------------------------- |
-| 0.0.1   | 2014-03-28 15:24 | `54ce7fa`                          | none                             |
-| 0.0.2   | 2014-03-28 15:53 | `079519a`                          | none                             |
-| 0.0.3   | 2014-03-28 22:17 | `709a56e`                          | `v0.0.3` → `9907a84` (see below) |
-| 0.0.4   | 2014-07-17 21:11 | can't be matched: removed from npm | `v0.0.4` → `18906fe`             |
-| 0.0.5   | 2014-07-17 21:22 | `62f9cf7`                          | `v0.0.5` → `62f9cf7` (correct)   |
-| 1.0.1   | 2016-04-12 20:07 | `be98a23`                          | none                             |
-| 1.0.4   | 2016-04-12 21:31 | `de36d43`                          | none                             |
-| 1.1.4   | 2016-05-11 14:53 | `4063d93`                          | none                             |
-| 1.1.5   | 2016-05-13 09:11 | `eb09674`                          | none                             |
+| Version | Published (UTC)  | Matching commit                    | Tag                                      |
+| ------- | ---------------- | ---------------------------------- | ---------------------------------------- |
+| 0.0.1   | 2014-03-28 15:24 | `54ce7fa`                          | `v0.0.1` → `54ce7fa` (new)               |
+| 0.0.2   | 2014-03-28 15:53 | `079519a`                          | `v0.0.2` → `079519a` (new)               |
+| 0.0.3   | 2014-03-28 22:17 | `709a56e`                          | `v0.0.3` → `9907a84` (existing, kept)    |
+| 0.0.4   | 2014-07-17 21:11 | can't be matched: removed from npm | `v0.0.4` → `18906fe` (existing, kept)    |
+| 0.0.5   | 2014-07-17 21:22 | `62f9cf7`                          | `v0.0.5` → `62f9cf7` (existing, correct) |
+| 1.0.1   | 2016-04-12 20:07 | `be98a23`                          | `v1.0.1` → `be98a23` (new)               |
+| 1.0.4   | 2016-04-12 21:31 | `de36d43`                          | `v1.0.4` → `de36d43` (new)               |
+| 1.1.4   | 2016-05-11 14:53 | `4063d93`                          | `v1.1.4` → `4063d93` (new)               |
+| 1.1.5   | 2016-05-13 09:11 | `eb09674`                          | `v1.1.5` → `eb09674` (new)               |
 
+- New tags are annotated, created by the maintainer, and their messages say
+  they are retroactive. The three existing tags (lightweight, 2014) are left
+  as they are.
 - 0.0.3: three commits have identical contents for the published files.
   `709a56e` ("Version bump for NPM") was committed nine seconds before the
-  publish, and the two later commits add `bower.json` and `component.json`,
-  which the published package doesn't contain. The existing `v0.0.3` tag
-  points at the later `9907a84`; the code is the same.
-- 0.0.4: the version is in npm's history but its package is no longer
-  available, so it can't be compared. The existing `v0.0.4` tag is the only
-  record.
-- Open: create the missing tags, and decide whether to move `v0.0.3`.
+  publish (22:17:04 UTC). The two later commits, which add `component.json`
+  and `bower.json` (files the published package doesn't contain), were made
+  about two hours after it. So the existing `v0.0.3` tag points at
+  `9907a84`, a commit that didn't exist yet when 0.0.3 was published, but
+  every file in the npm package is the same there. Kept, not moved: the tag
+  has been public since 2014, git doesn't update a moved tag in existing
+  clones, and Bower (below) resolves `0.0.3` through it. `9907a84` is the
+  commit that added `bower.json`, so moving the tag to `709a56e` would give
+  Bower installs of 0.0.3 a tree without `bower.json`.
+- 0.0.4: the version is in npm's history but its package is gone from the
+  registry (HTTP 404), so it can't be compared. Commit timing suggests it was
+  published from `098948e` (21:09 UTC, sets `package.json` to 0.0.4), and
+  that `18906fe` (21:14 UTC, after the publish) only updated the versions in
+  `bower.json` and `component.json`; `index.js` and `package.json` are
+  identical in both. This is inferred, not verified, so the existing tag is
+  kept as the only record.
+- 0.0.5: `62f9cf7` was committed 12 seconds after the publish (authored 42
+  seconds before it); its contents match the package.
+- Bower resolves versions from git tags. Before these tags, the highest tag
+  was `v0.0.5`, so an unpinned `bower install underscore-deep-extend` got
+  0.0.5, although `bower.json` on the default branch says 1.1.5. With
+  `v1.1.5` it gets 1.1.5, the code npm serves as `latest`. Bower installs
+  saved with a 0.0.x range (`~0.0.5`, `^0.0.5`) don't move. Every future
+  release gets a tag anyway (VI.E.1), so this change would have come with
+  the next release. The repository Bower's registry points to is not
+  confirmed (the xioup repo has the same three tags as this one).
 
 ## D5. Test tooling (2026-11-02, decided)
 
