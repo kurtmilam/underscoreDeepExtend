@@ -1,0 +1,114 @@
+# Stages a new version on npm when a GitHub release is published.
+# See docs/DECISIONS.md, D12.
+#
+# This workflow never makes a version live. It only stages it
+# (`npm stage publish`), authenticated by npm trusted publishing (OIDC), so
+# there is no npm token anywhere. The maintainer then approves the staged
+# version with two-factor authentication (`npm stage approve <id>`, or
+# npmjs.com -> Staged Packages), which is the step that publishes it.
+#
+# npm binds the trusted publisher to this file's name (publish.yml) and to the
+# `npm` environment. Renaming either breaks publishing until the trusted
+# publisher on npmjs.com is recreated to match.
+
+name: Publish
+
+on:
+  release:
+    types: [published]
+
+# Nothing in this workflow needs more than read access by default. The stage
+# job adds only id-token: write, which lets it request an OIDC token for npm.
+permissions:
+  contents: read
+
+# Never run two releases at once, and never cancel one that has started.
+concurrency:
+  group: npm-publish
+  cancel-in-progress: false
+
+jobs:
+  # The same suite, Node.js matrix and coverage gate as pull requests (D11),
+  # run on the tagged commit itself.
+  test:
+    name: Tests
+    uses: ./.github/workflows/test.yml
+
+  stage:
+    name: Stage on npm
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # The trusted publisher on npmjs.com names this environment, so only jobs
+    # running in it can stage. Its deployment rule allows only v* tags.
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Check out the tagged commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # Full history, so the next step can check that the tag is on master.
+          fetch-depth: 0
+
+      - name: Check the tag, the version and the branch
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+          PRERELEASE: ${{ github.event.release.prerelease }}
+        run: |
+          set -eu
+          version="$(node -p "require('./package.json').version")"
+          echo "Release tag: $TAG; package.json version: $version"
+          if [ "$TAG" != "v$version" ]; then
+            echo "::error::The release tag must be v$version (package.json), not $TAG."
+            exit 1
+          fi
+          case "$version" in
+            *-*)
+              echo "::error::Prerelease versions aren't published by this workflow (D12)."
+              exit 1 ;;
+          esac
+          if [ "$PRERELEASE" = "true" ]; then
+            echo "::error::The GitHub release is marked as a prerelease, but $version is a regular version."
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor HEAD origin/master; then
+            echo "::error::The tagged commit isn't on master. Release only from master."
+            exit 1
+          fi
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
+
+      # Staged publishing needs npm 11.15.0 or later. The version is pinned so
+      # a release never runs an npm it hasn't been checked with (D12).
+      - name: Install npm 12.2.1
+        run: npm install --global --no-audit --no-fund npm@12.2.1
+
+      # No `npm ci`: nothing is built, and the package has no runtime
+      # dependencies, so the files are packed straight from the checkout.
+      # --ignore-scripts keeps lifecycle scripts out of the step that holds
+      # the OIDC token. Provenance is added automatically (public repository).
+      - name: Stage the package
+        run: |
+          set -eu
+          npm --version
+          out="$RUNNER_TEMP/stage.json"
+          npm stage publish --ignore-scripts --json > "$out"
+          cat "$out"
+          # The JSON is keyed by package name: { "<name>": { ..., "stageId": ... } }
+          stage_id="$(node -p "const o = require(process.argv[1]); const p = o[require('./package.json').name] || {}; p.stageId || ''" "$out")"
+          {
+            echo "## Staged ${GITHUB_REPOSITORY}@${GITHUB_REF_NAME}"
+            echo
+            echo "Stage id: \`${stage_id:-see the log}\`"
+            echo
+            echo "Nothing is live yet. To publish it, run \`npm stage approve ${stage_id:-<id>}\`"
+            echo "(logged in as the package owner, with two-factor), or approve it on"
+            echo "npmjs.com under the package's Staged Packages tab."
+          } >> "$GITHUB_STEP_SUMMARY"

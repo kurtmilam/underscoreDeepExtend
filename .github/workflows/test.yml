@@ -1,5 +1,7 @@
 # Runs the full test suite, with the 100% coverage gate, on every pull request
 # to master and every push to master. See docs/DECISIONS.md, D11.
+# publish.yml also calls it, so a release is tested on the tagged commit
+# before it is staged on npm (D12).
 
 name: Tests
 
@@ -9,6 +11,7 @@ on:
   push:
     branches: [master]
   workflow_dispatch:
+  workflow_call:
 
 # Read-only token: this workflow only checks out code and runs tests.
 permissions:
