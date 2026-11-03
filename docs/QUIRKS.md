@@ -10,7 +10,9 @@ date. Tests that run per library are listed once; they run for every
 underscore and lodash version in the library matrix (decisions log D6).
 
 Decisions: **open** (not yet decided), **keep** (intended, or too risky to
-change), or **change in vX** (to be changed in that major version).
+change), **change in vX** (to be changed in that major version), or **docs
+fix** (the documentation changes; the behavior doesn't). Decided 2026-11-03;
+the principles behind the v2 decisions are in decisions log D14.
 
 ## Placeholder (`#{_}`)
 
@@ -25,7 +27,7 @@ becomes `"[object Object]"`, `[1, 2]` becomes `"1,2"`. The README presents
 - `test/characterization/placeholder.test.js`: "stringifies a Date parent with Date#toString"
 - `test/characterization/errors.test.js`: "a #{_} string can replace an object or array without throwing"
 
-Decision: open
+Decision: change in v2. A source string that is exactly `#{_}` keeps the parent value unchanged, whatever its type; a placeholder inside a longer string still stringifies the parent (decisions log D14).
 
 ### Q2. Only the first placeholder in a string is replaced
 
@@ -33,7 +35,7 @@ The pattern has no `g` flag. In `"#{_}-#{_}"` only the first one is replaced.
 
 - `test/characterization/placeholder.test.js`: "replaces only the FIRST placeholder; later ones stay literal"
 
-Decision: open
+Decision: change in v2. Every placeholder in the string is replaced.
 
 ### Q3. `$` patterns in the parent string are interpreted
 
@@ -42,7 +44,7 @@ The parent value is passed to `String#replace` as the replacement string, so
 
 - `test/characterization/placeholder.test.js`: "interprets $ patterns in the parent string as String#replace patterns"
 
-Decision: open
+Decision: change in v2. The parent value is inserted literally (a replacer function, not a replacement string).
 
 ### Q4. The placeholder stays literal when there is no parent value
 
@@ -52,7 +54,7 @@ string is copied as-is, `#{_}` included.
 - `test/characterization/placeholder.test.js`: "keeps the placeholder literally when the target key is missing, undefined or null"
 - `test/characterization/placeholder.test.js`: "keeps the placeholder literally when the target value is a function"
 
-Decision: open
+Decision: keep. With no parent value there is nothing to substitute.
 
 ## Assignment and cloning
 
@@ -76,7 +78,7 @@ versions functions are copied by reference (decisions log D6).
 - `test/characterization/gist-reports.test.js`: "a function replacing another function becomes an empty object"
 - `test/characterization/gist-reports.test.js`: "a function replacing a function with properties keeps only the source function's own properties, as a plain object"
 
-Decision: open
+Decision: change in v2. Functions are copied by reference. v2 uses its own clone instead of the injected `_.clone` (D14).
 
 ### Q6. With underscore, Dates and RegExps become empty objects
 
@@ -98,7 +100,7 @@ log D6).
 - `test/characterization/dispatch.test.js`: "a Date source value replaces an existing primitive or object without throwing"
 - `test/characterization/dispatch.test.js`: "a RegExp source value for a new key is cloned"
 
-Decision: open
+Decision: change in v2. v2's own clone copies Dates and RegExps as Dates and RegExps, with any injected library (D14).
 
 ### Q7. Assigned values are shallow copies that share nested values with the source
 
@@ -116,7 +118,7 @@ but a second-level value is still shared.
 - `test/characterization/dispatch.test.js`: "a new array is copied, but its elements are shared with the source"
 - `test/characterization/dispatch.test.js`: "shared nested values let a LATER merge mutate an earlier source"
 
-Decision: open
+Decision: change in v2. The result is fully fresh: it shares no objects or arrays with any input (D14).
 
 ### Q8. An object merges into a Date target, mutating the Date
 
@@ -125,7 +127,7 @@ properties to that Date instance.
 
 - `test/characterization/dispatch.test.js`: "an object source merges INTO a Date target, mutating that Date"
 
-Decision: open
+Decision: change in v2. v2 never mutates its inputs (D14), so a Date in the target is never changed. What an object merged over a Date produces is decided when v2 is designed.
 
 ## Arrays
 
@@ -140,7 +142,7 @@ and an array assigned to a new key is not filtered either.
 - `test/characterization/arrays.test.js`: "does NOT remove nulls from a top-level array target"
 - `test/characterization/arrays.test.js`: "does not filter a nested array that was assigned rather than merged"
 
-Decision: open
+Decision: keep. Removing nulls from merged nested arrays is the documented way to delete elements. The README will say exactly where it applies. In v2 the nulls are removed from the result only, never from the target's own array (D14).
 
 ### Q10. A merged nested array is both mutated and replaced
 
@@ -151,7 +153,7 @@ original sees the unfiltered result.
 - `test/characterization/arrays.test.js`: "replaces a merged nested array with a new array"
 - `test/characterization/arrays.test.js`: "still mutates the original nested array in place, nulls included"
 
-Decision: open
+Decision: change in v2. The result gets a new array; the original is never changed (D14).
 
 ## Type mismatches and errors
 
@@ -166,7 +168,7 @@ either. Only `null`, a Date, or a `#{_}` string can replace an object or array.
 - `test/characterization/errors.test.js`: "number target, object source throws \"Trying to combine an object with a non-object (k)\""
 - `test/characterization/errors.test.js`: "array target, object source throws \"Trying to combine an array with a non-array (k)\""
 
-Decision: open
+Decision: keep. The errors are intended.
 
 ### Q12. Error messages name only the immediate key
 
@@ -176,7 +178,7 @@ path to it.
 - `test/characterization/errors.test.js`: "names only the immediate key, not the full path"
 - `test/characterization/errors.test.js`: "names the index for array elements"
 
-Decision: open
+Decision: change in v2. The message names the full path to the key. Message text is public API, so this needs a major version.
 
 ### Q13. A throw leaves the target partly merged
 
@@ -186,7 +188,7 @@ Keys and sources processed before the failing key stay applied.
 - `test/characterization/errors.test.js`: "earlier sources stay applied when a later source throws"
 - `test/characterization/errors.test.js`: "sources before a null source are still applied"
 
-Decision: open
+Decision: change in v2. v2 never mutates its inputs (D14), so a throw leaves every input exactly as it was; only the partly built result is discarded.
 
 ### Q14. A null or undefined source throws
 
@@ -196,7 +198,7 @@ Unlike `_.extend`, which skips them, a `null` or `undefined` source throws a
 - `test/characterization/errors.test.js`: "a null source throws TypeError"
 - `test/characterization/errors.test.js`: "an undefined source throws TypeError"
 
-Decision: open
+Decision: change in v2. `null` and `undefined` sources are skipped, as with `_.extend` (and as before 1.1.5).
 
 ### Q15. Primitive sources depend on the JavaScript engine
 
@@ -208,7 +210,7 @@ behavior.
 - `test/characterization/api.test.js`: "coerces a string source to its indexed characters (ES2015+ Object.keys; an ES5 engine throws TypeError)"
 - `test/characterization/api.test.js`: "ignores a number or boolean source (ES2015+ Object.keys; an ES5 engine throws TypeError)"
 
-Decision: open
+Decision: keep in 1.x. v2 decides how it treats primitive sources together with Q14.
 
 ## Injected library and module format
 
@@ -221,7 +223,7 @@ calls whatever `_.deepExtend` is at call time.
 - `test/characterization/api.test.js`: "nested merges throw TypeError unless mixed in as _.deepExtend"
 - `test/characterization/api.test.js`: "nested merges call whatever _.deepExtend is at call time"
 
-Decision: open
+Decision: change in v2. v2 recurses internally and doesn't call `_.deepExtend` (D14). This changes which injected methods are called, so it needs a major version.
 
 ### Q17. The README's dependency list is incomplete
 
@@ -231,7 +233,7 @@ mixed-in `deepExtend`.
 
 - `test/characterization/injected-library.test.js`: "throws TypeError as soon as a key is processed"
 
-Decision: open (documentation fix)
+Decision: docs fix. The README lists every injected method the code calls. No behavior change.
 
 ### Q18. Loading without `module`, `define` or `window` throws
 
@@ -242,7 +244,7 @@ where none of the three exists (a Web Worker, for example) throws a
 - `test/module-format.test.js`: "throws a ReferenceError at load time when no module, define or window exists (e.g. a Web Worker)"
 - `test/module-format.test.js`: "does not check define.amd: any global function named define is used"
 
-Decision: open
+Decision: change in v2. Fall back to the global object when `window` doesn't exist, and check `define.amd`. Adding that check can change which branch loads, so it needs a major version.
 
 ## Documentation
 
@@ -255,4 +257,4 @@ See Q1. The tests pin the real output and are marked "README DISCREPANCY".
 - `test/characterization/readme.test.js`: "README DISCREPANCY: a shorter child array leaves trailing parent elements untouched"
 - `test/characterization/readme.test.js`: "README DISCREPANCY: null removes a nested array element, but #{_} stringifies the kept number"
 
-Decision: open (fix the README, the code, or both)
+Decision: docs fix. The README examples show the output 1.x actually produces. v2's README follows from the Q1 decision.

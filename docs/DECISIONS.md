@@ -325,3 +325,43 @@ text of that version's GitHub release.
   version and for every version in D4; entries are unique, newest first, with
   non-increasing dates, and each has a body and a link naming its own version;
   the script's output format.
+
+## D14. Quirk outcomes and the shape of v2 (2026-11-03, decided)
+
+Every quirk in `docs/QUIRKS.md` (Q1–Q19) has a decision: 4 keep, 13 change
+in v2, 2 docs fixes. The quirks log has the decision for each one. The v2
+changes follow these principles:
+
+- **Behavior changes go into v2 of the existing entry point**, not into a
+  separate export. Under semver a major version is opt-in: `^1.x` ranges
+  never install it, so 1.x users keep today's behavior. The v2 fixes share
+  one implementation (internal recursion and the library's own clone), which
+  a second export would duplicate.
+- **v2 never mutates its arguments.** It returns a new object and leaves the
+  target and every source unchanged, even when it throws. This is v2's
+  biggest break: today the target is mutated and returned, like `_.extend`.
+  Calls such as `_.deepExtend({}, a, b)` keep working; calls that rely on the
+  target being updated in place don't. v2's changelog entry and README lead
+  with it.
+- **The result is fully fresh.** It shares no objects or arrays with any
+  input, so writing to the result later can't change an input either.
+  Structural sharing with a "treat the result as read-only" rule was
+  considered and rejected: ES5 code can't enforce it without freezing. The
+  cost is copying the whole target on every call.
+- **v2 uses its own clone instead of the injected `_.clone`**, so assigned
+  values no longer depend on the injected library or its version (D6). Functions
+  are copied by reference; Dates and RegExps stay Dates and RegExps. This
+  resolves Q5, Q6 and Q7 and removes the per-library differences they cause.
+- **v2 recurses internally** instead of calling the mixed-in `_.deepExtend`
+  (Q16). This changes the set of injected methods the library calls, which is
+  public API (compatibility policy V.B).
+
+Left for v2's design:
+
+- What an object merged over a Date in the target produces (Q8).
+- What the clone does with non-plain objects in the target (class instances,
+  objects with their own prototype).
+- How v2 treats primitive sources (Q15), together with skipping `null` and
+  `undefined` sources (Q14).
+
+The two docs fixes (Q17, Q19) change only the README.
