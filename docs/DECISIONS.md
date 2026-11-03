@@ -54,7 +54,7 @@ The original gist (https://gist.github.com/1868955) was compared at revision
   pinned in `test/characterization/gist-reports.test.js`, and noted in quirks
   Q5, Q6 and Q7 where the fixes made at the time don't fully hold.
 
-## D4. Published versions and their commits (2026-11-02, decided; tags decided 2026-11-03)
+## D4. Published versions and their commits (2026-11-02, decided; tags and releases decided 2026-11-03)
 
 Each published version's npm package was compared, file by file, with every
 commit in the repo (line endings normalized; npm's own `package.json` fields
@@ -87,7 +87,10 @@ names the same commit.
   has been public since 2014, git doesn't update a moved tag in existing
   clones, and Bower (below) resolves `0.0.3` through it. `9907a84` is the
   commit that added `bower.json`, so moving the tag to `709a56e` would give
-  Bower installs of 0.0.3 a tree without `bower.json`.
+  Bower installs of 0.0.3 a tree without `bower.json`. Keeping it follows
+  instruction VI.E.2 as revised on 2026-11-03: a tag that predates the
+  instructions is kept when every file in the published package is identical
+  at its commit.
 - 0.0.4: the version is in npm's history but its package is gone from the
   registry (HTTP 404), so it can't be compared. Commit timing suggests it was
   published from `098948e` (21:09 UTC, sets `package.json` to 0.0.4), and
@@ -103,8 +106,15 @@ names the same commit.
   `v1.1.5` it gets 1.1.5, the code npm serves as `latest`. Bower installs
   saved with a 0.0.x range (`~0.0.5`, `^0.0.5`) don't move. Every future
   release gets a tag anyway (VI.E.1), so this change would have come with
-  the next release. The repository Bower's registry points to is not
-  confirmed (the xioup repo has the same three tags as this one).
+  the next release. Bower's registry entry points to this repository
+  (checked 2026-11-03).
+- GitHub releases: every tag in the table gets a GitHub release (VI.E.1),
+  created by the maintainer, whose notes are that version's `CHANGELOG.md`
+  entry (D13). The entries were reconstructed in 2026 from the commit history
+  and checked by running each version's code with underscore and lodash; the
+  0.0.4 entry says its package is gone from npm. Only `v1.1.5` is marked as
+  the latest release. None of these commits contains `publish.yml` (D12), so
+  publishing their releases runs no publish workflow.
 
 ## D5. Test tooling (2026-11-02, decided)
 
@@ -259,3 +269,25 @@ prepares it.
   An OIDC publish can't be rehearsed without publishing. If staging fails,
   the fallback is an interactive `npm publish` with two-factor from the
   maintainer's machine, which "disallow tokens" doesn't block.
+
+## D13. Changelog and release notes (2026-11-03, decided)
+
+`CHANGELOG.md` at the repository root lists every published version, newest
+first, under headings of the form `## [X.Y.Z] - YYYY-MM-DD` (the npm publish
+date, UTC), with a link reference to the version's changes. Each entry is the
+text of that version's GitHub release.
+
+- Release notes are generated, not retyped:
+  `node scripts/changelog-entry.js X.Y.Z` prints the entry's body, with
+  hard-wrapped lines joined (GitHub shows every newline in release notes as a
+  line break), followed by the publish date and the changes link. It can be
+  piped into `gh release create vX.Y.Z --notes-file -`.
+- Every release adds its entry in the same pull request as the version bump,
+  so the tagged commit already contains it. A new entry's date is the planned
+  publish date; correct it in a later change if publishing slips.
+- Not part of the npm package: `files` (D10) leaves out `CHANGELOG.md` and
+  `scripts/`, and `test/package-contents.test.js` still passes unchanged.
+- Enforced by `test/changelog.test.js`: an entry exists for `package.json`'s
+  version and for every version in D4; entries are unique, newest first, with
+  non-increasing dates, and each has a body and a link naming its own version;
+  the script's output format.
