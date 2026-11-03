@@ -121,22 +121,56 @@ names the same commit.
 - Runner: `node:test` (`npm test`). Developed and verified on Node.js 22.
 - Dev dependencies, pinned to exact versions so pinned behavior can't shift
   under us: `underscore` 1.13.8, `lodash` 4.18.1, `acorn` 8.19.0 (for the ES5
-  syntax check). No runtime dependencies.
+  syntax check). No runtime dependencies. Older library versions for the
+  matrix are installed under npm aliases (D6).
 - Layout: `test/characterization/` holds behavior tests; `test/es5.test.js`
   enforces ES5 for `index.js`; `test/module-format.test.js` pins the module
   formats and entry point; `test/records.test.js` checks this repo's
   quirks log against the tests.
 
-## D6. Library matrix (2026-11-02, decided for now)
+## D6. Library matrix (2026-11-02; older versions decided 2026-11-03)
 
-Every behavior test runs against underscore and lodash, each with
+Every behavior test runs against each library version below, each with
 `deepExtend` mixed in as the README describes. lodash uses an isolated
-`runInContext()` instance; underscore has no equivalent, so its shared
-instance is used. Differences between the two are pinned per library with
-`perLibrary()`, which requires an expectation for every library in the matrix.
+`runInContext()` instance; underscore has no equivalent, so each installed
+copy's shared instance is used.
 
-Open: whether to add older major versions that consumers may still use (for
-example lodash 3 or underscore 1.8).
+| Family | Versions | Why |
+| ------ | -------- | --- |
+| underscore | 1.13.8, 1.8.3, 1.2.1 | newest; current when 1.1.5 shipped (2016); oldest that passes |
+| lodash | 4.18.1, 3.10.1, 3.0.0 | newest; last of the 3.x line; oldest that passes |
+
+- The newest versions are the plain `underscore` and `lodash` dev dependencies
+  (D5). Older ones are npm aliases named after their version, e.g.
+  `"lodash-3.10.1": "npm:lodash@3.10.1"`, so they're pinned in
+  `package-lock.json` like any other dev dependency and cost no runtime
+  dependency. Each matrix entry's name includes the version it loaded
+  ("lodash 3.10.1").
+- Differences are pinned with `perLibrary()`, keyed by family. Every family
+  needs an expectation, so adding a family forces a decision at each place
+  behavior differs. An exact entry name ("lodash 3.0.0") may override its
+  family for one version. No override is needed today: within each family,
+  every version above behaves identically for the whole suite.
+- `test/library-matrix.test.js` pins the matrix, the aliases and the
+  `perLibrary()` rules.
+
+How the range was chosen (2026-11-03): the characterization suite was run
+against the last release of every minor line of both libraries, then bisected
+at each boundary. Every difference found comes from what the injected
+library's `_.clone` returns; `index.js` itself behaves the same.
+
+| Versions | Result |
+| -------- | ------ |
+| underscore 1.2.1 – 1.13.8 | every test passes |
+| underscore 1.2.0 and older | `_.clone` of a primitive returns `{}`, so every primitive assignment becomes an empty object (44 tests fail). Unsupported. |
+| underscore 1.0.x | `require()` returns an object without `_.mixin`, so the README setup fails. Unsupported. |
+| lodash 3.0.0 – 4.18.1 | every test passes |
+| lodash 2.2.0 – 2.4.2 | `_.clone` returns functions unchanged, so functions are copied by reference instead of becoming `{}` (Q5; 4 tests differ) |
+| lodash 2.1.0 and older | as above, and Dates and RegExps become `{}`, as with underscore (Q6; 9 tests differ) |
+| lodash 1.0.x and older | as above, and no `runInContext()` (the harness needs it; not library behavior) |
+
+lodash 2 and older aren't in the matrix: their behavior is recorded here
+rather than declared supported. Revisit if a consumer reports using them.
 
 ## D7. How ES5 is enforced (2026-11-02, decided)
 

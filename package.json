@@ -43,6 +43,10 @@
   "devDependencies": {
     "acorn": "8.19.0",
     "lodash": "4.18.1",
-    "underscore": "1.13.8"
+    "lodash-3.0.0": "npm:lodash@3.0.0",
+    "lodash-3.10.1": "npm:lodash@3.10.1",
+    "underscore": "1.13.8",
+    "underscore-1.2.1": "npm:underscore@1.2.1",
+    "underscore-1.8.3": "npm:underscore@1.8.3"
   }
 }
