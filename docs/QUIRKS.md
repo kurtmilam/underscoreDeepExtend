@@ -6,8 +6,8 @@ deliberate, documented decision.
 
 Every entry lists the tests that pin it. `test/records.test.js` fails if a
 listed test is renamed or removed, so this log can't silently drift out of
-date. Tests that run per library are listed once; they run for both underscore
-and lodash.
+date. Tests that run per library are listed once; they run for every
+underscore and lodash version in the library matrix (decisions log D6).
 
 Decisions: **open** (not yet decided), **keep** (intended, or too risky to
 change), or **change in vX** (to be changed in that major version).
@@ -67,6 +67,10 @@ Gist comments asked for functions to be copied (wulftone, 2013), and the gist
 was updated in response, but functions still aren't copied; a 2024 comment
 (nntoan) reports the same thing.
 
+This holds for every version in the matrix. lodash before 3.0.0, which isn't
+in the matrix, returns the function itself from `_.clone`, so with those
+versions functions are copied by reference (decisions log D6).
+
 - `test/characterization/dispatch.test.js`: "a function source value for a new key becomes a plain empty object"
 - `test/characterization/gist-reports.test.js`: "a function assigned to a new key is not copied: it becomes an empty object"
 - `test/characterization/gist-reports.test.js`: "a function replacing another function becomes an empty object"
@@ -83,6 +87,10 @@ library.
 The gist's Date handling was added in response to a 2014 comment (tkalfigo).
 It works with lodash, but with underscore, the dependency the gist itself
 names, the reported scenario still doesn't produce a Date.
+
+Every underscore version in the matrix behaves this way. lodash before 2.2.0,
+which isn't in the matrix, also turns Dates and RegExps into `{}` (decisions
+log D6).
 
 - `test/characterization/dispatch.test.js`: "a Date source value is cloned onto a new key"
 - `test/characterization/gist-reports.test.js`: "a later Date replaces an earlier Date (underscore: as an empty object)"
