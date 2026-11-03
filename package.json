@@ -28,7 +28,7 @@
   "version": "1.1.5",
   "repository": {
     "type": "git",
-    "url": "git://github.com/kurtmilam/underscoreDeepExtend.git"
+    "url": "git+https://github.com/kurtmilam/underscoreDeepExtend.git"
   },
   "main": "index",
   "files": [

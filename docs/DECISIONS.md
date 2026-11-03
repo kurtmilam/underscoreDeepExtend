@@ -185,3 +185,52 @@ to `master`, every push to `master`, and on demand
 - Dependabot (`.github/dependabot.yml`) proposes updates to those pinned SHAs
   in one grouped pull request a month, waiting 7 days after a release. npm
   dependencies are excluded, since they are pinned on purpose (D5).
+
+## D12. Publishing from CI with staged trusted publishing (2026-11-03, decided)
+
+New versions are built and staged on npm by GitHub Actions
+(`.github/workflows/publish.yml`), and made live by the maintainer with
+two-factor authentication. Publishing stays the maintainer's action; CI only
+prepares it.
+
+- Flow: create the tag `vX.Y.Z` and publish a GitHub release for it. The
+  workflow runs the full test suite on the tagged commit (it calls
+  `test.yml`, D11), checks that the tag matches `package.json`'s version,
+  isn't a prerelease and is on `master`, then runs `npm stage publish`. The
+  staged version isn't installable until the maintainer runs
+  `npm stage approve <id>` or approves it on npmjs.com (Staged Packages tab),
+  both of which require two-factor.
+- Authentication: npm trusted publishing (OIDC). There is no npm token in the
+  repository or its secrets. The trusted publisher on npmjs.com names the
+  repository `kurtmilam/underscoreDeepExtend`, the workflow file
+  `publish.yml` and the environment `npm`, and allows `npm stage publish`
+  only, not `npm publish`. The package's publishing access stays at "Require
+  two-factor authentication and disallow tokens"; trusted publishing isn't a
+  token and still works under it.
+- GitHub environment `npm`: deployments allowed from `v*` tags only, so a
+  branch can't obtain a token npm would accept. No required reviewers: the
+  two-factor approval on npm is the human gate, and a second click in GitHub
+  would only lengthen the time between merging and publishing.
+- Provenance: generated automatically, since the repository and package are
+  public. It records which workflow run built the tarball from which commit.
+- `package.json`'s `repository.url` changed from
+  `git://github.com/kurtmilam/underscoreDeepExtend.git` to
+  `git+https://github.com/kurtmilam/underscoreDeepExtend.git`, the form npm
+  itself writes. npm requires the field to match the repository that ran the
+  workflow, and a mismatch shows only at publish time, so the less common
+  `git://` form wasn't left to chance. Both name the same repository, and
+  npm's package page links to the same place. Not a breaking change.
+- Enforced by `test/publishing.test.js`: the repository field, the
+  workflow's file name, and that the workflow stages but never runs
+  `npm publish` and uses no npm token.
+- npm version: the stage job installs a pinned npm (12.2.1 as of
+  2026-11-03; staged publishing needs 11.15.0 or later) on Node.js 24.
+  Dependabot doesn't update it; bump it deliberately.
+- Prereleases (`X.Y.Z-tag`) are refused by the workflow for now. Revisit when
+  one is planned, since they need a dist-tag other than `latest`.
+- Limits: npm doesn't validate a trusted publisher when it is saved, and a
+  new one expires if nothing is published through it within 2 days. So it is
+  created on release day, shortly before the release (`npm trust github`).
+  An OIDC publish can't be rehearsed without publishing. If staging fails,
+  the fallback is an interactive `npm publish` with two-factor from the
+  maintainer's machine, which "disallow tokens" doesn't block.
